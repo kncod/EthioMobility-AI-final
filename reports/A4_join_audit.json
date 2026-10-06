@@ -1,0 +1,18 @@
+{
+  "weather": {
+    "left_rows_before": 88646,
+    "rows_after": 88646,
+    "match_rate": 1.0,
+    "zone_hours_without_weather": 0,
+    "join_type": "left many-to-one on pickup_hour"
+  },
+  "events": {
+    "events_total": 165,
+    "confirmed_event_rows": 159,
+    "cancelled_event_rows": 6,
+    "events_matched_at_least_one_zone_hour": 159,
+    "events_excluded_or_unmatched": 0,
+    "trip_rows_in_any_event_window": 24155,
+    "window_rule": "type-specific [start-pre, end+post]; football/concert pre=2h post=2h; confirmed only"
+  }
+}

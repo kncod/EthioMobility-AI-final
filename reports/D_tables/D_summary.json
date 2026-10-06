@@ -1,0 +1,50 @@
+{
+  "val_split": "train<2025-10-18; valid 2025-10-18..2025-10-31",
+  "winner": {
+    "model": "hist_gbm",
+    "family": "ml",
+    "rmse": 10.66428175234246,
+    "mae": 6.686265501993277,
+    "train_seconds": 10.371405839920044
+  },
+  "rolling_rmse_mean": 11.06044285834897,
+  "rolling_rmse_std": 0.41590864102521835,
+  "best_params": {
+    "min_samples_leaf": 40,
+    "max_iter": 350,
+    "max_depth": 10,
+    "learning_rate": 0.08,
+    "l2_regularization": 1.0
+  },
+  "final_val_rmse": 10.15974023110378,
+  "final_val_mae": 6.405185000318096,
+  "response_helped": false,
+  "submission_rows": 4032,
+  "features": [
+    "zone",
+    "hour",
+    "dow",
+    "is_weekend",
+    "month",
+    "is_payday_window",
+    "week_index",
+    "temp_c",
+    "rain_mm",
+    "humidity_pct",
+    "wind_kmh",
+    "rain_class",
+    "rain_last_3h",
+    "in_event_window",
+    "is_public_holiday",
+    "is_football_window",
+    "is_concert_window",
+    "is_road_closure",
+    "hours_to_next_football",
+    "hours_since_football",
+    "event_attendance_nearby",
+    "n_events_overlapping",
+    "trips_lag_168h",
+    "trips_roll_mean_24h",
+    "trips_roll_mean_168h"
+  ]
+}

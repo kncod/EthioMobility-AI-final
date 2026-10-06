@@ -1,0 +1,5 @@
+zone_type,peak_hour,peak_mean_trips,quiet_hour,quiet_mean_trips
+market,13,65.25653206650831,2,7.444180522565321
+residential,7,49.095518867924525,2,3.9156769596199523
+residential_late_launch,7,36.3375,2,2.7875
+transport_hub,18,79.61037735849057,1,5.10188679245283

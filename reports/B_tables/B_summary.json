@@ -1,0 +1,67 @@
+{
+  "zone_types": {
+    "Arat Kilo": "transport_hub",
+    "Ayat": "residential_late_launch",
+    "Bole": "market",
+    "CMC": "residential",
+    "Gerji": "residential",
+    "Kazanchis": "transport_hub",
+    "Kolfe": "residential",
+    "Lideta": "transport_hub",
+    "Megenagna": "transport_hub",
+    "Merkato": "market",
+    "Piassa": "transport_hub",
+    "Sarbet": "residential"
+  },
+  "B2.1": {
+    "temp_peak_hour_eat": 15,
+    "rain_demand_corr_by_shift_h": {
+      "0": 0.283358119905005,
+      "1": 0.16654744701301674,
+      "2": 0.1465595981471896,
+      "3": 0.10373274821948283,
+      "4": 0.055091207195206764,
+      "5": 0.0007384333061837528
+    },
+    "best_shift_h": 0,
+    "corr_if_utc_treated_as_local": 0.14739279863356755,
+    "corr_correct_eat_shift0": 0.283358119905005
+  },
+  "B4.1": {
+    "trips_vs_active_drivers": 0.9667784851455771,
+    "trips_vs_avg_wait_min": 0.5248234110244324,
+    "trips_vs_avg_fare_birr": 0.006180928085991325
+  },
+  "B4.3": {
+    "mean_trips_payday": 29.771328162869608,
+    "mean_trips_other": 28.32091053785399,
+    "ratio_raw": 1.0512136650082975,
+    "mean_detrended_payday": 0.4765317359562146,
+    "mean_detrended_other": -0.11809183113939374,
+    "keep_as_feature": true
+  },
+  "B3.4_spikes": [
+    {
+      "date": "2025-09-26",
+      "city_trips": 11497.0,
+      "top_zone": "Kazanchis",
+      "top_zone_trips": 1513.0,
+      "hypothesis": "Possible unlisted concert/market peak, payday cluster, or weather-driven surge not tagged as a calendar event."
+    },
+    {
+      "date": "2025-09-12",
+      "city_trips": 11005.0,
+      "top_zone": "Megenagna",
+      "top_zone_trips": 1394.0,
+      "hypothesis": "Possible unlisted concert/market peak, payday cluster, or weather-driven surge not tagged as a calendar event."
+    },
+    {
+      "date": "2025-10-28",
+      "city_trips": 10812.0,
+      "top_zone": "Megenagna",
+      "top_zone_trips": 1252.0,
+      "hypothesis": "Possible unlisted concert/market peak, payday cluster, or weather-driven surge not tagged as a calendar event."
+    }
+  ],
+  "B1.4_growth_pct": 29.50956570149444
+}

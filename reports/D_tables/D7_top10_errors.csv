@@ -1,0 +1,11 @@
+zone,pickup_hour,hour,trips,pred,abs_error,is_football_window,is_public_holiday,rain_mm,hypothesis
+Piassa,2025-10-19 12:00:00,12,192.0,27.78047686301004,164.21952313698995,0,0,0.0,"Possible unlisted event, local spike, or lag mismatch."
+Merkato,2025-10-18 06:00:00,6,192.0,52.59231559322764,139.40768440677238,0,0,0.0,"Possible unlisted event, local spike, or lag mismatch."
+Kazanchis,2025-10-25 18:00:00,18,192.0,76.71471199382769,115.28528800617231,1,0,0.0,Football window — event magnitude may exceed average uplift feature.
+Megenagna,2025-10-28 02:00:00,2,96.0,8.51583011872519,87.48416988127481,0,0,0.0,"Possible unlisted event, local spike, or lag mismatch."
+Megenagna,2025-10-28 18:00:00,18,174.0,92.19550333482256,81.80449666517744,0,0,0.0,Peak commute hour — residual peak sharpness not fully captured.
+Kazanchis,2025-10-28 18:00:00,18,176.0,99.21572282946948,76.78427717053052,0,0,0.0,Peak commute hour — residual peak sharpness not fully captured.
+Bole,2025-10-26 18:00:00,18,137.0,64.36110329522191,72.63889670477809,0,0,0.0,Peak commute hour — residual peak sharpness not fully captured.
+Megenagna,2025-10-29 18:00:00,18,183.0,115.1507496631134,67.8492503368866,0,0,3.5,Heavy rain hour — nonlinear rain response / sparse heavy-rain history.
+Piassa,2025-10-29 20:00:00,20,110.0,45.092272282629075,64.90772771737093,0,0,1.15,"Possible unlisted event, local spike, or lag mismatch."
+Lideta,2025-10-28 18:00:00,18,114.0,66.38769917314418,47.612300826855815,0,0,0.0,Peak commute hour — residual peak sharpness not fully captured.

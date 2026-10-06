@@ -1,0 +1,38 @@
+feature,known_at_forecast_time,decision
+active_drivers,no,"EXCLUDED — operational outcome, unknown at forecast time"
+avg_fare_birr,no,"EXCLUDED — operational outcome, unknown at forecast time"
+avg_wait_min,no,"EXCLUDED — operational outcome, unknown at forecast time"
+data_type,n/a,id/meta — not a model feature
+day,n/a,id/meta — not a model feature
+dow,yes,INCLUDED in final model
+event_attendance_nearby,yes,INCLUDED in final model
+event_names,n/a,id/meta — not a model feature
+hour,yes,INCLUDED in final model
+hours_since_football,yes,INCLUDED in final model
+hours_to_next_football,yes,INCLUDED in final model
+humidity_pct,yes,INCLUDED in final model
+in_event_window,yes,INCLUDED in final model
+is_concert_window,yes,INCLUDED in final model
+is_football_window,yes,INCLUDED in final model
+is_payday_window,yes,INCLUDED in final model
+is_public_holiday,yes,INCLUDED in final model
+is_road_closure,yes,INCLUDED in final model
+is_weekend,yes,INCLUDED in final model
+month,yes,INCLUDED in final model
+n_events_overlapping,yes,INCLUDED in final model
+pickup_hour,n/a,id/meta — not a model feature
+rain_class,yes,INCLUDED in final model
+rain_last_3h,yes,INCLUDED in final model
+rain_mm,yes,INCLUDED in final model
+record_id,n/a,id/meta — not a model feature
+row_id,n/a,id/meta — not a model feature
+temp_c,yes,INCLUDED in final model
+trips,n/a,target only
+trips_lag_168h,yes,INCLUDED in final model
+trips_raw,n/a,target only
+trips_roll_mean_168h,yes,INCLUDED in final model
+trips_roll_mean_24h,yes,INCLUDED in final model
+week_index,yes,INCLUDED in final model
+wind_kmh,yes,INCLUDED in final model
+zone,yes,INCLUDED in final model
+zone_raw,n/a,id/meta — not a model feature
