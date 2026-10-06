@@ -15,6 +15,7 @@ from pathlib import Path
 
 import joblib
 import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -47,15 +48,10 @@ WATCH_ZONES = {"Ayat"}
 
 @st.cache_resource
 def load_model():
-    import warnings
-
     path = ASSETS / "final_model.joblib"
     if not path.exists():
         path = Path(__file__).resolve().parents[1] / "models" / "final_model.joblib"
-    # Cloud may install a patch sklearn newer than the pickle; warn-only is OK.
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", category=UserWarning, module="sklearn")
-        return joblib.load(path)
+    return joblib.load(path)
 
 
 @st.cache_data
@@ -174,6 +170,21 @@ def city_day_totals(day: date, model_bundle, features_df: pd.DataFrame) -> pd.Da
     return pd.DataFrame(rows).sort_values("day_trips", ascending=False)
 
 
+def city_hour_matrix(day, model, features_df, events=None):
+    """V4 helper — zone × hour forecast matrix for the selected date (+ event spans)."""
+    mat = pd.DataFrame(np.nan, index=ZONES, columns=range(24), dtype=float)
+    spans = []
+    for z in ZONES:
+        fc = forecast_day(z, day, model, features_df)
+        if fc.empty:
+            continue
+        mat.loc[z, :] = fc.set_index("hour")["forecast_trips"].reindex(range(24)).values
+        if events is not None:
+            for h0, h1, label in event_windows_for_day(z, day, events):
+                spans.append((z, h0, h1, label))
+    return mat, spans
+
+
 def render_zone_forecast(zone, day, model, features_df, weather, events, fare, profile):
     try:
         fc = forecast_day(zone, day, model, features_df)
@@ -207,16 +218,42 @@ def render_zone_forecast(zone, day, model, features_df, weather, events, fare, p
             "and prefer the high end of the uncertainty band when staffing."
         )
 
+    # O3 — section 1 of the zone tab
+    st.divider()
+    st.markdown("#### 1 · Day summary")
     m1, m2, m3, m4, m5, m6 = st.columns(6)
     m1.metric("Peak hour", f"{int(peak_row['hour']):02d}:00")
-    m2.metric("Peak trips", f"{peak_row['forecast_trips']:.1f}")
+    typ_peak = float(typ.get(int(peak_row["hour"]), 0.0))
+    m2.metric(
+        "Peak trips",
+        f"{peak_row['forecast_trips']:.1f}",
+        delta=f"{peak_row['forecast_trips'] - typ_peak:+.1f} vs typical",
+        delta_color="normal",
+    )
     m3.metric("Drivers at peak", f"{peak_row['drivers_needed']:.1f}")
-    m4.metric("Day total trips", f"{day_trips:.0f}")
+    m4.metric(
+        "Day total trips",
+        f"{day_trips:.0f}",
+        delta=f"{day_trips - typical_day:+.0f} trips vs typical",
+        delta_color="normal",
+    )
     m5.metric("vs typical weekday", f"{vs_pct:+.1f}%")
     m6.metric("Day gross fares", f"{fc['expected_fare_birr'].sum():,.0f} ETB")
 
+    # O3 — section 2
+    st.divider()
+    st.markdown("#### 2 · What the app looked up for you")
     st.info(f"**Looked up:** {context}")
+    st.caption(
+        f"🧾 Data used — weather: forecast rows bundled with the app · "
+        f"events: {len(ev)} confirmed for this zone/day · "
+        f"model: HistGBM (val RMSE {model.get('val_rmse', float('nan')):.2f}) · "
+        "you typed only zone + date"
+    )
 
+    # O3 — section 3
+    st.divider()
+    st.markdown("#### 3 · Events & how to read the forecast")
     left, right = st.columns([1.2, 1])
     with left:
         st.subheader("Events on this day")
@@ -228,15 +265,19 @@ def render_zone_forecast(zone, day, model, features_df, weather, events, fare, p
         else:
             st.caption("No confirmed events in this zone for the selected date.")
     with right:
-        st.subheader("How to use the band")
-        st.markdown(
-            f"- **Mid (blue):** point forecast for dispatch planning  \n"
-            f"- **Band:** ≈ ±{mae:.1f} trips/hour (validation MAE)  \n"
-            f"- **High band → drivers:** peak buffer ≈ "
-            f"**{peak_row['drivers_high']:.1f}** drivers  \n"
-            f"- Staff to mid; keep high as contingency on event/rain days."
-        )
+        # O4 — collapsed expander (content unchanged)
+        with st.expander("How to use the band", expanded=False):
+            st.markdown(
+                f"- **Mid (blue):** point forecast for dispatch planning  \n"
+                f"- **Band:** ≈ ±{mae:.1f} trips/hour (validation MAE)  \n"
+                f"- **High band → drivers:** peak buffer ≈ "
+                f"**{peak_row['drivers_high']:.1f}** drivers  \n"
+                f"- Staff to mid; keep high as contingency on event/rain days."
+            )
 
+    # O3 — section 4
+    st.divider()
+    st.markdown("#### 4 · 24-hour forecast curve")
     st.subheader(f"{zone} · {day.isoformat()} — hourly forecast")
     hours = fc["hour"].values
     forecast = fc["forecast_trips"].values
@@ -253,6 +294,18 @@ def render_zone_forecast(zone, day, model, features_df, weather, events, fare, p
     ax.plot(hours, typical, "--", color="#666666", lw=1.5, label="Typical weekday")
     for h0, h1, label in event_windows_for_day(zone, day, events):
         ax.axvspan(h0, h1, color="#E69F00", alpha=0.2, label=f"Event: {label}")
+    # V1 — peak annotation (marker only; no series or data changed)
+    peak_h = int(peak_row["hour"])
+    ax.axvline(peak_h, ls=":", lw=1.6, color="#D55E00", label="Peak hour")
+    ax.annotate(
+        f"Peak {peak_h:02d}:00 · {peak_row['forecast_trips']:.0f} trips",
+        xy=(peak_h, float(peak_row["forecast_trips"])),
+        xytext=(8, 10),
+        textcoords="offset points",
+        fontsize=9,
+        color="#D55E00",
+        fontweight="bold",
+    )
     handles, labels = ax.get_legend_handles_labels()
     uniq = dict(zip(labels, handles))
     ax.legend(uniq.values(), uniq.keys(), loc="upper left", fontsize=8)
@@ -280,6 +333,51 @@ def render_zone_forecast(zone, day, model, features_df, weather, events, fare, p
     fig.tight_layout()
     st.pyplot(fig, clear_figure=True)
 
+    # O3 — section 5: NEW charts (V2 drivers, V3 vs-typical); existing charts untouched
+    st.divider()
+    st.markdown("#### 5 · Drivers needed & departure from a normal day")
+    diff = forecast - np.nan_to_num(typical, nan=0.0)
+    col_a, col_b = st.columns(2)
+
+    with col_a:
+        figd, axd = plt.subplots(figsize=(5.6, 3.2))
+        drv = fc["drivers_needed"].values
+        drv_high = fc["drivers_high"].values
+        axd.fill_between(hours, drv, drv_high, step="mid", color="#56B4E9", alpha=0.4, label="Mid → high band")
+        axd.step(hours, drv, where="mid", color="#009E73", lw=2, label="Drivers needed")
+        axd.axvline(peak_h, ls=":", lw=1.6, color="#D55E00", label="Peak hour")
+        axd.set_title("Drivers needed by hour (trips ÷ 1.3)")
+        axd.set_xlabel("Hour (EAT)")
+        axd.set_ylabel("Drivers")
+        axd.set_xticks(range(0, 24, 3))
+        axd.set_ylim(bottom=0)
+        axd.grid(True, alpha=0.25)
+        axd.legend(fontsize=8)
+        figd.tight_layout()
+        st.pyplot(figd, clear_figure=True)
+
+    with col_b:
+        figv, axvv = plt.subplots(figsize=(5.6, 3.2))
+        colors_v = ["#009E73" if v >= 0 else "#D55E00" for v in diff]
+        axvv.bar(hours, diff, color=colors_v, width=0.9)
+        axvv.axhline(0, color="#333", lw=1)
+        axvv.axvline(peak_h, ls=":", lw=1.6, color="#D55E00")
+        axvv.set_title("Forecast minus typical weekday, by hour")
+        axvv.set_xlabel("Hour (EAT)")
+        axvv.set_ylabel("Δ trips")
+        axvv.set_xticks(range(0, 24, 3))
+        axvv.grid(True, alpha=0.25)
+        figv.tight_layout()
+        st.pyplot(figv, clear_figure=True)
+
+    # I3 — quick staffing hint
+    top_hours = np.argsort(diff)[-3:][::-1]
+    hint = ", ".join(f"{int(hours[i]):02d}:00 ({diff[i]:+.0f})" for i in top_hours)
+    st.caption(f"💡 **Best 3 hours to pre-position drivers** (largest uplift vs typical): {hint}")
+
+    # O3 — section 6: hourly plan table
+    st.divider()
+    st.markdown("#### 6 · Hourly plan (table & CSV)")
     show = fc[
         [
             "pickup_hour",
@@ -297,8 +395,17 @@ def render_zone_forecast(zone, day, model, features_df, weather, events, fare, p
         ]
     ].copy()
     show["pickup_hour"] = show["pickup_hour"].dt.strftime("%Y-%m-%d %H:%M")
-    st.dataframe(
-        show.style.format(
+
+    # V8 — table styling only: gradient on forecast column + bold peak row (columns unchanged)
+    def _hl_peak(row):
+        if row.name == peak_idx:
+            return ["font-weight: bold; color: #000000"] * len(row)
+        return [""] * len(row)
+
+    styler = (
+        show.style.apply(_hl_peak, axis=1)
+        .background_gradient(subset=["forecast_trips"], cmap="Blues", vmin=0)
+        .format(
             {
                 "forecast_low": "{:.1f}",
                 "forecast_trips": "{:.1f}",
@@ -309,10 +416,9 @@ def render_zone_forecast(zone, day, model, features_df, weather, events, fare, p
                 "temp_c": "{:.1f}",
                 "rain_mm": "{:.1f}",
             }
-        ),
-        width="stretch",
-        hide_index=True,
+        )
     )
+    st.dataframe(styler, width="stretch", hide_index=True)
 
     csv_bytes = show.to_csv(index=False).encode("utf-8")
     st.download_button(
@@ -329,7 +435,7 @@ def render_zone_forecast(zone, day, model, features_df, weather, events, fare, p
     )
 
 
-def render_city_overview(day, model, features_df, profile):
+def render_city_overview(day, model, features_df, profile, events=None):
     st.subheader(f"City overview · {day.isoformat()}")
     st.caption("All 12 zones for the selected date — totals from the same HistGBM model.")
     with st.spinner("Forecasting all zones…"):
@@ -369,6 +475,29 @@ def render_city_overview(day, model, features_df, profile):
     fig.tight_layout()
     st.pyplot(fig, clear_figure=True)
 
+    # V4 — NEW zone × hour heatmap for the selected date (existing charts above untouched)
+    st.markdown("#### Zone × hour demand heatmap")
+    mat, spans = city_hour_matrix(day, model, features_df, events=events)
+    figh, axh = plt.subplots(figsize=(11, 4.6))
+    im = axh.imshow(mat.values.astype(float), aspect="auto", cmap="viridis", interpolation="nearest")
+    axh.set_yticks(range(len(mat.index)))
+    axh.set_yticklabels(mat.index)
+    axh.set_xticks(range(24))
+    axh.set_xticklabels([f"{h:02d}" for h in range(24)], fontsize=7)
+    axh.set_xlabel("Hour (EAT)")
+    axh.set_title(f"Forecast trips per hour by zone — {day.isoformat()}")
+    for z, h0, h1, label in spans:
+        yi = list(mat.index).index(z)
+        axh.add_patch(
+            Rectangle((h0 - 0.5, yi - 0.45), h1 - h0, 0.9, fill=False, edgecolor="#E69F00", lw=1.6)
+        )
+    cbar = figh.colorbar(im, ax=axh, pad=0.01)
+    cbar.set_label("Forecast trips / hour")
+    figh.tight_layout()
+    st.pyplot(figh, clear_figure=True)
+    if spans:
+        st.caption("🟧 Orange outlines = confirmed event windows looked up from the bundled events table.")
+
     # Peak hour heatmap-like table
     st.markdown("#### Peak hour by zone")
     st.dataframe(
@@ -402,6 +531,23 @@ def main() -> None:
         "Operations demo — pick a zone and a November 2025 date. "
         "Weather and events are looked up automatically; no manual weather/event inputs."
     )
+    # O1 — header band (additive): context badges visible on every tab
+    b1, b2, b3 = st.columns(3)
+    b1.markdown(
+        "<div style='background:#0072B222;border:1px solid #0072B2;border-radius:12px;"
+        "padding:6px 10px;text-align:center'><b>📅 Forecast window</b><br>1–14 Nov 2025</div>",
+        unsafe_allow_html=True,
+    )
+    b2.markdown(
+        "<div style='background:#009E7322;border:1px solid #009E73;border-radius:12px;"
+        "padding:6px 10px;text-align:center'><b>🧮 Model</b><br>HistGBM · weather + events + lags</div>",
+        unsafe_allow_html=True,
+    )
+    b3.markdown(
+        "<div style='background:#E69F0022;border:1px solid #E69F00;border-radius:12px;"
+        "padding:6px 10px;text-align:center'><b>🕒 Clock</b><br>Africa/Addis_Ababa (UTC+3)</div>",
+        unsafe_allow_html=True,
+    )
 
     try:
         model = load_model()
@@ -421,9 +567,10 @@ def main() -> None:
             help="Supported forecast window: 1–14 November 2025",
         )
         st.markdown("---")
-        st.subheader("Model card")
-        st.markdown(
-            f"""
+        # O2 — model card collapsed into an expander (content unchanged)
+        with st.expander("About this model", expanded=False):
+            st.markdown(
+                f"""
 - **Model:** HistGBM (sklearn)  
 - **Val RMSE:** `{model['val_rmse']:.2f}`  
 - **Val MAE:** `{model['val_mae']:.2f}`  
@@ -432,7 +579,7 @@ def main() -> None:
 - **Drivers rule:** trips ÷ {TRIPS_PER_DRIVER}  
 - **Uncertainty:** ± MAE trips/hour  
 """
-        )
+            )
 
     if day < MIN_DATE or day > MAX_DATE:
         st.warning(
@@ -445,7 +592,15 @@ def main() -> None:
     with tab_zone:
         render_zone_forecast(zone, day, model, features_df, weather, events, fare, profile)
     with tab_city:
-        render_city_overview(day, model, features_df, profile)
+        render_city_overview(day, model, features_df, profile, events=events)
+
+    # O6 — footer (additive)
+    st.divider()
+    st.caption(
+        "Run: `python -m streamlit run app/app.py` · "
+        "Submission: `submission/team_addis_demand_ai_submission.csv` · "
+        f"Validation (18–31 Oct): RMSE {model.get('val_rmse', float('nan')):.2f} · {TEAM}"
+    )
 
 
 if __name__ == "__main__":
