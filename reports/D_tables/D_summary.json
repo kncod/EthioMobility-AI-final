@@ -5,7 +5,7 @@
     "family": "ml",
     "rmse": 10.66428175234246,
     "mae": 6.686265501993277,
-    "train_seconds": 10.371405839920044
+    "train_seconds": 6.917276382446289
   },
   "rolling_rmse_mean": 11.06044285834897,
   "rolling_rmse_std": 0.41590864102521835,

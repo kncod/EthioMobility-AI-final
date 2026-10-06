@@ -531,14 +531,21 @@ def run_model_bundle(master: pd.DataFrame) -> dict:
         {"model": "seasonal_naive", "rmse": rmse(y_va, pred_seas), "mae": mae(y_va, pred_seas), "train_s": 0.0},
     ]
 
+    # Match src/modeling.py D2 defaults so fig10 aligns with D2/D3 tables
+    hist_params = dict(
+        max_depth=8,
+        learning_rate=0.08,
+        max_iter=250,
+        min_samples_leaf=20,
+        l2_regularization=0.1,
+        random_state=RANDOM_STATE,
+    )
     models = {
         "ridge": Ridge(alpha=1.0),
         "random_forest": RandomForestRegressor(
-            n_estimators=80, max_depth=12, n_jobs=-1, random_state=RANDOM_STATE
+            n_estimators=100, max_depth=14, min_samples_leaf=5, n_jobs=-1, random_state=RANDOM_STATE
         ),
-        "hist_gbm": HistGradientBoostingRegressor(
-            max_depth=6, learning_rate=0.08, max_iter=200, random_state=RANDOM_STATE
-        ),
+        "hist_gbm": HistGradientBoostingRegressor(**hist_params),
     }
 
     fitted = {}
@@ -551,30 +558,26 @@ def run_model_bundle(master: pd.DataFrame) -> dict:
         results.append({"model": name, "rmse": rmse(y_va, pred), "mae": mae(y_va, pred), "train_s": dt})
         fitted[name] = (pipe, pred)
 
-    # Rolling-origin for final model (hist_gbm) — 4 folds
+    # Rolling-origin for HistGBM — same 5 folds + params as modeling.d3_rolling
     fold_rmses = []
     cuts = [
         ("2025-08-23", "2025-09-06"),
         ("2025-09-06", "2025-09-20"),
         ("2025-09-20", "2025-10-04"),
         ("2025-10-04", "2025-10-18"),
+        ("2025-10-18", "2025-11-01"),
     ]
     for c0, c1 in cuts:
         c0t, c1t = pd.Timestamp(c0), pd.Timestamp(c1)
         tr = d[d["pickup_hour"] < c0t]
         va = d[(d["pickup_hour"] >= c0t) & (d["pickup_hour"] < c1t)]
-        if len(tr) < 1000 or len(va) < 100:
+        if len(tr) < 2000 or len(va) < 200:
             continue
         _, Xtr, ytr, pre_f, feats, _, _ = _prepare_xy(tr)
         pipe = Pipeline(
             [
                 ("pre", pre_f),
-                (
-                    "model",
-                    HistGradientBoostingRegressor(
-                        max_depth=6, learning_rate=0.08, max_iter=200, random_state=RANDOM_STATE
-                    ),
-                ),
+                ("model", HistGradientBoostingRegressor(**hist_params)),
             ]
         )
         pipe.fit(Xtr, ytr)
@@ -641,7 +644,7 @@ def fig10_model_comparison(bundle: dict) -> None:
     # error bars on final model from rolling folds
     if bundle["fold_rmses"]:
         mean_f = np.mean(bundle["fold_rmses"])
-        std_f = np.std(bundle["fold_rmses"])
+        std_f = np.std(bundle["fold_rmses"], ddof=1)  # match D3 sample std
         # mark on hist_gbm bar
         y_pos = list(res["model"]).index("hist_gbm")
         ax.errorbar(mean_f, y_pos, xerr=std_f, fmt="o", color=COLORS["vermillion"], capsize=4, label=f"hist_gbm rolling RMSE {mean_f:.2f}±{std_f:.2f}")
@@ -729,13 +732,17 @@ def fig12_importance(bundle: dict) -> None:
 def write_captions() -> None:
     lines = ["# Figure captions (Deliverable C)", ""]
     for i in range(1, 13):
-        # find key
-        key = next(k for k in CAPTIONS if k.startswith(f"fig{i:02d}_"))
+        matches = [k for k in CAPTIONS if k.startswith(f"fig{i:02d}_")]
+        if not matches:
+            # Fall back to on-disk caption file / skip missing (partial regenerations)
+            continue
+        key = matches[0]
         lines.append(f"## {key}")
         lines.append(CAPTIONS[key])
         lines.append("")
-    (FIG_DIR / "figure_captions.md").write_text("\n".join(lines), encoding="utf-8")
-    print(f"Wrote {FIG_DIR / 'figure_captions.md'}")
+    if len(lines) > 2:
+        (FIG_DIR / "figure_captions.md").write_text("\n".join(lines), encoding="utf-8")
+        print(f"Wrote {FIG_DIR / 'figure_captions.md'}")
 
 
 def main() -> None:

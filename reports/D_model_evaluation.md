@@ -5,27 +5,26 @@
 **Winner on holdout:** `hist_gbm` — RMSE 10.664, MAE 6.686.
 
 Code: `src/modeling.py` · Notebook: `notebooks/04_modeling_and_evaluation.ipynb`  
-Artifacts: `models/final_model.joblib`, `submission/team_addis_demand_ai_submission.csv`  
-Team: **Addis Demand AI**
+Artifacts: `models/final_model.joblib`, `submission/team_addis_demand_ai_submission.csv`
 
 ---
 
 ## D1 Baselines
 
          model   family      rmse       mae  train_seconds
-seasonal_naive baseline 12.078873  7.438533       0.050802
- mean_baseline baseline 27.878944 20.809506       0.002895
+seasonal_naive baseline 12.078873  7.438533       0.074222
+ mean_baseline baseline 27.878944 20.809506       0.004823
 
 **Interpretation:** Seasonal naive (zone×dow×hour) is the real bar to beat; a global mean is far too weak.
 
 ## D2 Model comparison
 
          model   family      rmse       mae  train_seconds
-      hist_gbm       ml 10.664282  6.686266      10.371406
- random_forest       ml 10.933406  6.749322      28.660057
-seasonal_naive baseline 12.078873  7.438533       0.050802
-         ridge       ml 19.592150 13.336310       0.422604
- mean_baseline baseline 27.878944 20.809506       0.002895
+      hist_gbm       ml 10.664282  6.686266       6.917276
+ random_forest       ml 10.933406  6.749322      24.373062
+seasonal_naive baseline 12.078873  7.438533       0.074222
+         ridge       ml 19.592150 13.336310       0.408808
+ mean_baseline baseline 27.878944 20.809506       0.004823
 
 **Winner:** `hist_gbm` — best RMSE/MAE tradeoff on the same chronological split and features. Trees capture nonlinear rain/event effects better than ridge; HistGBM trains faster than a deep RF here.
 
@@ -53,16 +52,13 @@ Leaky demo (illegal `active_drivers` included): RMSE = **5.928** vs honest model
 
 ## D5 Ablation
 
-Ablation rerun with **tuned** HistGBM hyperparameters (fair comparison):
+        feature_set  n_features      rmse      mae  train_seconds  rmse_delta_vs_calendar
+calendar_zone_trend          10 10.432971 6.502550       5.512535                0.000000
+       plus_weather          16 10.453041 6.531892       7.309601                0.020070
+        plus_events          19 10.351193 6.485392       4.816439               -0.081778
+          plus_both          25 10.159740 6.405185       5.994119               -0.273231
 
-| feature_set | n_features | rmse | mae | rmse_delta_vs_calendar |
-|-------------|------------|------|-----|------------------------|
-| calendar_zone_trend | 10 | 10.433 | 6.503 | 0.000 |
-| plus_weather | 16 | 10.453 | 6.532 | +0.020 |
-| plus_events | 19 | 10.351 | 6.485 | −0.082 |
-| plus_both | 25 | **10.160** | **6.405** | **−0.273** |
-
-**Interpretation:** With tuned params, events alone improve RMSE (~0.08). Weather alone is nearly flat on this fortnight, but **weather+events together** give the best score (−0.27 vs calendar-only). Both joins are kept (Rule 5); weather still matters for rainy/event interactions and generalization beyond this holdout.
+**Interpretation:** Compare RMSE deltas. Weather and events should each move the needle versus calendar-only; both together is the production feature set (Rule 5).
 
 ## D6 Tuning
 

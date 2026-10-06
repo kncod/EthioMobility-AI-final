@@ -50,9 +50,9 @@ Demo only: `pip install -r app/requirements.txt`.
 
 ## Validation score (chronological, 18–31 Oct)
 
-- **Tuned HistGBM RMSE ≈ 10.16** · MAE ≈ 6.41 (final model / D6)
-- Untuned HistGBM (D2 default params) RMSE ≈ **10.66** — same family, before tuning
-- Rolling-origin (D3, 5 folds): RMSE **11.06 ± 0.42**
+- **Tuned HistGBM RMSE ≈ 10.16** · MAE ≈ 6.41 (final model / D6) — headline score
+- Untuned HistGBM (D2 default params / fig10 bar) RMSE ≈ **10.66** — same family before D6 tuning
+- Rolling-origin (D3 + fig10 error bar, 5 folds): RMSE **11.06 ± 0.42**
 - Seasonal naive RMSE ≈ 12.08 · Mean baseline ≈ 27.88
 
 ## Demo

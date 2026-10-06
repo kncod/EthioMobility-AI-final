@@ -1,9 +1,9 @@
 # Streamlit Cloud installs this file (next to app/app.py).
 # Prefer Python 3.11 in Advanced settings (delete + redeploy to change).
-streamlit>=1.32
-pandas>=2.2,<3
-numpy>=1.26
-scikit-learn>=1.9.0,<1.10
-joblib>=1.3
-matplotlib>=3.7
-pyarrow>=14,<25
+streamlit==1.40.2
+pandas==2.2.3
+numpy==2.1.3
+scikit-learn==1.9.0
+joblib==1.4.2
+matplotlib==3.9.3
+pyarrow==18.1.0
