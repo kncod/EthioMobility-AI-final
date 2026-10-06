@@ -1,0 +1,23 @@
+file,columns,issue_type,n_affected,pct_affected,fix,why
+ride_demand_train.csv,zone,inconsistent_spelling,55,0.06,Mapped 55 raw labels -> 12 canonical zones; unmapped=0,Joins and models need one label per zone
+ride_demand_train.csv,pickup_hour,mixed_datetime_formats,85460,100.0,"Parsed ISO+03, YYYY-MM-DD HH:MM, DD/MM/YYYY HH:MM; floored to hour; clock=EAT",Mixed formats cause silent day/month swaps if parsed naively
+ride_demand_train.csv,trips,impossible_negative,681,0.8,Set trips<0 to NaN,Trip counts cannot be negative
+ride_demand_train.csv,trips,missing_target,1526,1.79,Kept as NaN for analysis; dropped only when fitting models,Missing targets should not be silently filled before evaluation design
+ride_demand_train.csv,trips,extreme_outlier,81,0.09,Capped trips at 99.9th pct (192.0); kept trips_raw,A few extreme spikes distort RMSE and tree splits
+ride_demand_train.csv,avg_wait_min,impossible_negative,1707,2.0,Set avg_wait_min<0 to NaN,Wait time cannot be negative
+ride_demand_train.csv,avg_fare_birr,missing_values,1277,1.49,Left as NaN (analysis only; not a forecast-time feature),"Operational column — useful for EDA/demo fares, not model input"
+ride_demand_train.csv,"zone,pickup_hour",duplicate_zone_hour,846,0.99,Kept first row per zone-hour,Many-to-one weather join requires unique left keys
+ride_demand_test.csv,zone,inconsistent_spelling,55,1.36,Mapped 55 raw labels -> 12 canonical zones; unmapped=0,Joins and models need one label per zone
+ride_demand_test.csv,pickup_hour,mixed_datetime_formats,4032,100.0,"Parsed ISO+03, YYYY-MM-DD HH:MM, DD/MM/YYYY HH:MM; floored to hour; clock=EAT",Mixed formats cause silent day/month swaps if parsed naively
+weather_hourly.csv,timestamp,timezone_and_formats,7538,100.0,UTC (Z) converted to Africa/Addis_Ababa; DD/MM rows parsed dayfirst as EAT; floored to hour,Trip table is EAT; joining UTC hours without shift misaligns rain vs demand by ~3h
+weather_hourly.csv,rain_mm,sentinel_missing_code,76,1.01,Replaced rain_mm<=-999 with NaN,"-9999 is a missing-reading code, not rainfall"
+weather_hourly.csv,temp_c,impossible_value,353,4.68,Set temp_c>45 to NaN,Values like 76C are not plausible for Addis Ababa air temperature
+weather_hourly.csv,temp_c,missing_values,395,5.24,Imputed later with hourly seasonal median from train period,Keep series complete for joins
+weather_hourly.csv,humidity_pct,missing_values,153,2.03,Imputed later with hourly seasonal median from train period,Keep series complete for joins
+weather_hourly.csv,timestamp,duplicate_hours,724,9.6,Aggregated to unique hours by mean; rows 7538->6814,Duplicate keys would multiply trip rows on join
+weather_hourly.csv,timestamp,missing_hours_in_span,842,11.0,Reindexed to hourly spine; interpolated numeric gaps,Weather export has holes; without a spine the trip join misses ~11% of hours
+events_calendar.csv,event_type,inconsistent_spelling,20,12.12,Normalized 20 labels -> 8 types,Case/spacing variants must collapse for event-type features
+events_calendar.csv,status,inconsistent_spelling,5,3.03,Normalized to confirmed/cancelled,Cancelled events should not drive demand features the same way
+events_calendar.csv,end_datetime,missing_or_inverted_end,5,3.03,Filled/fixed ends with type-specific defaults,"Interval join needs a valid [start, end] window"
+events_calendar.csv,expected_attendance,free_text_numeric,111,67.27,Parsed digits from free text into expected_attendance_num,"Attendance entered as text (commas, 'approx') cannot be modeled raw"
+events_calendar.csv,zone,multi_zone_and_aliases,165,100.0,Expanded to long format: 165 events -> 335 event-zone rows; excluded=0,Citywide and '&' zones must attach to each affected zone-hour
