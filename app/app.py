@@ -261,7 +261,7 @@ def render_zone_forecast(zone, day, model, features_df, weather, events, fare, p
             show_ev = ev[["event_name", "event_type", "start_datetime", "end_datetime", "venue"]].copy()
             show_ev["start_datetime"] = show_ev["start_datetime"].dt.strftime("%H:%M")
             show_ev["end_datetime"] = show_ev["end_datetime"].dt.strftime("%H:%M")
-            st.dataframe(show_ev, width="stretch", hide_index=True)
+            st.dataframe(show_ev, use_container_width=True, hide_index=True)
         else:
             st.caption("No confirmed events in this zone for the selected date.")
     with right:
@@ -418,7 +418,7 @@ def render_zone_forecast(zone, day, model, features_df, weather, events, fare, p
             }
         )
     )
-    st.dataframe(styler, width="stretch", hide_index=True)
+    st.dataframe(styler, use_container_width=True, hide_index=True)
 
     csv_bytes = show.to_csv(index=False).encode("utf-8")
     st.download_button(
@@ -507,7 +507,7 @@ def render_city_overview(day, model, features_df, profile, events=None):
             peak_trips=totals["peak_trips"].round(1),
             drivers_at_peak=totals["drivers_at_peak"].round(1),
         ),
-        width="stretch",
+        use_container_width=True,
         hide_index=True,
     )
     st.download_button(
