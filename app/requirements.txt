@@ -1,9 +1,9 @@
 # Streamlit Cloud installs this file (next to app/app.py).
 # Prefer Python 3.11 in Advanced settings (delete + redeploy to change).
+# Do not pin pyarrow here — unused by the demo and fails to build on Cloud Python 3.14.
 streamlit==1.40.2
 pandas==2.2.3
 numpy==2.1.3
 scikit-learn==1.9.0
 joblib==1.4.2
 matplotlib==3.9.3
-pyarrow==18.1.0
